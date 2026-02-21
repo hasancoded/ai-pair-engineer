@@ -2,6 +2,8 @@
 
 An AI-powered code review assistant built with Streamlit and the Groq API. Paste any code snippet and receive a structured, LLM-generated analysis covering design flaws, refactoring proposals, unit test generation, and an optional SOLID principles audit.
 
+Live demo: [ai-pair-engineer.streamlit.app](https://ai-pair-engineer-5wmztwspncpzfj2xykbpsa.streamlit.app/)
+
 ---
 
 ## Features
@@ -26,7 +28,7 @@ An AI-powered code review assistant built with Streamlit and the Groq API. Paste
 | UI            | Streamlit                                                                |
 | LLM API       | Groq (llama-3.3-70b-versatile, llama-3.1-8b-instant, mixtral-8x7b-32768) |
 | Language      | Python 3.9+                                                              |
-| Configuration | python-dotenv                                                            |
+| Configuration | python-dotenv / Streamlit secrets                                        |
 
 ---
 
@@ -34,10 +36,12 @@ An AI-powered code review assistant built with Streamlit and the Groq API. Paste
 
 ```text
 ai-pair-engineer/
-├── app.py              # Streamlit UI, layout, and session management
-├── analyzer.py         # Prompt construction, Groq API client, analysis logic
-├── requirements.txt    # Python dependencies
-├── .env.example        # Environment variable template
+├── app.py                    # Streamlit UI, layout, and session management
+├── analyzer.py               # Prompt construction, Groq API client, analysis logic
+├── requirements.txt          # Python dependencies
+├── .env.example              # Environment variable template
+├── .streamlit/
+│   └── config.toml           # Streamlit configuration (toolbar, telemetry)
 ├── .gitignore
 └── README.md
 ```
@@ -67,30 +71,28 @@ pip install -r requirements.txt
 
 The application resolves the API key in the following priority order:
 
-**Option A — Environment variable (recommended for local use):**
+| Priority | Source                       | Scenario                   |
+| -------- | ---------------------------- | -------------------------- |
+| 1        | `st.secrets["GROQ_API_KEY"]` | Streamlit Cloud deployment |
+| 2        | `GROQ_API_KEY` in `.env`     | Local development          |
+| 3        | Sidebar input field          | Per-session manual entry   |
+
+**Local development:**
 
 ```bash
 cp .env.example .env
 # Edit .env and set GROQ_API_KEY=your_key_here
 ```
 
-**Option B — Streamlit secrets (recommended for cloud deployment):**
+**Streamlit Cloud deployment:**
 
-Create `.streamlit/secrets.toml`:
+In the Streamlit Cloud dashboard under **Advanced settings > Secrets**, add:
 
 ```toml
 GROQ_API_KEY = "your_key_here"
 ```
 
-Then update `app.py` to read from `st.secrets`:
-
-```python
-env_key = st.secrets.get("GROQ_API_KEY", "")
-```
-
-**Option C — In-app input:**
-
-Leave the environment variable unset. The sidebar provides a password-type field where users can enter their own key per session. Keys exist only for the duration of the session and are never stored or logged.
+No code changes are needed between environments — `app.py` handles both automatically.
 
 ---
 
@@ -106,15 +108,16 @@ The application opens at `http://localhost:8501`.
 
 ## Deployment
 
-### Streamlit Community Cloud
+This project is deployed on Streamlit Community Cloud:
 
-1. Push the repository to a public GitHub repository.
-2. Go to [share.streamlit.io](https://share.streamlit.io) and click **New app**.
-3. Select the repository and set the main file to `app.py`.
-4. Under **Advanced settings > Secrets**, add:
-   ```
-   GROQ_API_KEY = "your_key_here"
-   ```
+[ai-pair-engineer-5wmztwspncpzfj2xykbpsa.streamlit.app](https://ai-pair-engineer-5wmztwspncpzfj2xykbpsa.streamlit.app/)
+
+To deploy your own instance:
+
+1. Fork this repository.
+2. Go to [share.streamlit.io](https://share.streamlit.io) and click **Create app**.
+3. Select your fork, branch `main`, and main file `app.py`.
+4. Under **Advanced settings > Secrets**, add your `GROQ_API_KEY` in TOML format.
 5. Click **Deploy**.
 
 ---
@@ -123,7 +126,7 @@ The application opens at `http://localhost:8501`.
 
 - API keys accepted via the sidebar exist only for the duration of the browser session. They are never persisted, logged, or transmitted beyond the Groq API call.
 - Do not commit `.env` or `.streamlit/secrets.toml` to version control. Both are excluded via `.gitignore`.
-- For multi-user or shared deployments, configure the API key server-side via Streamlit secrets.
+- For shared or multi-user deployments, configure the API key server-side via Streamlit secrets.
 
 ---
 
